@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Socket.IO chat</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0 auto;
+            max-width: 500px;
+        }
+
+        .message {
+            background-color: #f4f4f4;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .message.joined {
+            background-color: #C4FC4F;
+        }
+
+        .message.left {
+            background-color: #f6c1c1;
+        }
+
+        input {
+            width: 75%;
+        }
+
+        button {
+            width: 20%;
+            float: right;
+        }
+
+        .rooms {
+            margin-top: 10px;
+        }
+
+        .rooms small {
+            cursor: pointer;
+        }
+
+        .rooms small.highlight {
+            font-weight: bold;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<h2>Simple Socket.IO chat</h2>
+<div id="messages"></div>
+<form id="form" action="">
+    <input id="input" autocomplete="off"/>
+    <button>Send</button>
+</form>
+
+<div class="rooms">
+    <small id="general" class="highlight">General</small>
+    <small id="roomA">Room A</small>
+    <small id="roomB">Room B</small>
+</div>
+
+<script src="/scripts/socket.io.js"></script>
+<script>
+    const socket = io();
+
+    const messages = document.getElementById('messages');
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const general = document.getElementById('general');
+    const roomA = document.getElementById('roomA');
+    const roomB = document.getElementById('roomB');
+
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        if (input.value) {
+            socket.send(input.value);
+            input.value = '';
+        }
+    });
+
+    general.addEventListener('click', () => {
+        roomA.classList.remove('highlight');
+        roomB.classList.remove('highlight');
+        socket.emit('leave');
+        general.classList.add('highlight');
+    });
+
+    roomA.addEventListener('click', () => {
+        general.classList.remove('highlight');
+        roomB.classList.remove('highlight');
+        socket.emit('join', 'a');
+        roomA.classList.add('highlight');
+    });
+
+    roomB.addEventListener('click', () => {
+        general.classList.remove('highlight');
+        roomA.classList.remove('highlight');
+        socket.emit('join', 'b');
+        roomB.classList.add('highlight');
+    });
+
+    socket.on('message', function (msg) {
+        createItem(msg);
+    });
+
+    socket.on('userConnected', function () {
+        createItem('Someone joined the chat.', 'joined');
+    });
+
+    function createItem(msg, className = '') {
+        const item = document.createElement('div');
+        item.classList.add('message');
+        if (className) item.classList.add(className);
+        item.textContent = msg;
+        messages.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+</script>
+</body>
+</html>
